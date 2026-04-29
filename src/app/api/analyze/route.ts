@@ -1,4 +1,4 @@
-export async function POST(req) {
+export async function POST(req: Request) {
   try {
     const { text } = await req.json();
 
@@ -18,25 +18,12 @@ export async function POST(req) {
           {
             role: "system",
             content: `
-You are a strict JSON generator.
-
-Convert user thoughts into a graph.
-
-IMPORTANT:
-- Return ONLY valid JSON
-- No explanation
-- No markdown
-- No text outside JSON
-
-Format:
+Return ONLY valid JSON:
 {
-  "nodes": [
-    { "id": "1", "label": "text", "type": "goal|problem|cause|confusion" }
-  ],
-  "edges": [
-    { "source": "1", "target": "2", "relation": "causes|blocks|leads_to" }
-  ]
+  "nodes": [{ "id": "1", "label": "", "type": "goal|problem|cause|confusion" }],
+  "edges": [{ "source": "1", "target": "2", "relation": "causes|blocks|leads_to" }]
 }
+No explanation.
 `
           },
           {
@@ -49,27 +36,18 @@ Format:
     });
 
     const data = await response.json();
-
     const raw = data?.choices?.[0]?.message?.content;
 
-    if (!raw) {
-      throw new Error("Empty response");
-    }
+    if (!raw) throw new Error("Empty response");
 
-    // 🔥 CLEAN JSON (VERY IMPORTANT FIX)
-    const cleaned = raw
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-
+    const cleaned = raw.replace(/```json/g, "").replace(/```/g, "").trim();
     const parsed = JSON.parse(cleaned);
 
     return Response.json(parsed);
 
   } catch (error) {
-    console.error("API ERROR:", error);
+    console.error(error);
 
-    // 🔥 ALWAYS RETURN FALLBACK (prevents crash)
     return Response.json({
       nodes: [
         { id: "1", label: "Learn Coding", type: "goal" },
