@@ -1,3 +1,9 @@
+import { OpenRouter } from "@openrouter/sdk";
+
+const openrouter = new OpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY!
+});
+
 export async function POST(req: Request) {
   try {
     const { text } = await req.json();
@@ -6,73 +12,54 @@ export async function POST(req: Request) {
       return Response.json({ error: "No input" }, { status: 400 });
     }
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-        temperature: 0.3,
-        messages: [
-          {
-            role: "system",
-            content: `
-You are an intelligent system that converts human thoughts into a structured graph.
+    const completion = await openrouter.chat.send({
+      model: "anthropic/claude-haiku-4.5", // 🔥 better than nemotron for structure
+      messages: [
+        {
+          role: "system",
+          content: `
+You are a high-level reasoning engine.
 
-GOAL:
-Expand the user's thought into multiple meaningful ideas.
+Convert user thoughts into a rich structured graph.
 
-RULES:
-- Generate 4 to 8 nodes
-- Include different types:
+STRICT RULES:
+- Generate 5–8 nodes
+- Include:
   goal, problem, cause, solution, opportunity
-- Think deeply:
-  - Add methods
-  - Add obstacles
-  - Add actions
+- Think practically and deeply
 
-- Create meaningful relationships:
-  causes, blocks, leads_to, enables
+EXAMPLE:
+Input: "how to earn money"
+→ include freelancing, skills, jobs, problems, actions
 
-OUTPUT FORMAT (STRICT JSON ONLY):
-
+OUTPUT (STRICT JSON ONLY):
 {
   "nodes": [
-    { "id": "1", "label": "text", "type": "goal|problem|cause|solution|opportunity" }
+    { "id": "1", "label": "", "type": "goal|problem|cause|solution|opportunity" }
   ],
   "edges": [
     { "source": "1", "target": "2", "relation": "causes|blocks|leads_to|enables" }
   ]
 }
 
-IMPORTANT:
-- Minimum 4 nodes
-- Maximum 8 nodes
-- Always include at least one solution
-- NO explanation
-- NO markdown
-- ONLY JSON
+NO explanation
+NO markdown
+ONLY JSON
 `
-          },
-          {
-            role: "user",
-            content: text
-          }
-        ]
-      })
+        },
+        {
+          role: "user",
+          content: text
+        }
+      ],
+      temperature: 0.5
     });
 
-    const data = await response.json();
+    const raw = completion.choices?.[0]?.message?.content;
 
-    const raw = data?.choices?.[0]?.message?.content;
+    if (!raw) throw new Error("Empty response");
 
-    if (!raw) {
-      throw new Error("Empty response");
-    }
-
-    // 🔥 CLEAN RESPONSE (fix JSON errors)
+    // 🔥 CLEAN OUTPUT
     const cleaned = raw
       .replace(/```json/g, "")
       .replace(/```/g, "")
@@ -85,7 +72,7 @@ IMPORTANT:
   } catch (error) {
     console.error("API ERROR:", error);
 
-    // ✅ fallback so UI never breaks
+    // ✅ fallback (never break UI)
     return Response.json({
       nodes: [
         { id: "1", label: "Earn Money", type: "goal" },
