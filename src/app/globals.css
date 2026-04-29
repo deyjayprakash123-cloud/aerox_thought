@@ -1,0 +1,94 @@
+@import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
+
+@theme {
+  --font-inter: "Inter", sans-serif;
+  --color-neon-blue: #00f0ff;
+  --color-neon-purple: #7a00ff;
+  --color-neon-pink: #ff00c8;
+  --color-deep-black: #0a0a0a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-inter), sans-serif;
+  background-color: #0a0a0a;
+  color: #ffffff;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(122, 0, 255, 0.5);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #7a00ff;
+}
+
+/* React Flow overrides */
+.react-flow__background {
+  background-color: transparent !important;
+}
+.react-flow__pane {
+  cursor: default !important;
+}
+.react-flow__handle {
+  opacity: 0 !important;
+  width: 8px !important;
+  height: 8px !important;
+}
+
+/* Keyframes */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(0, 240, 255, 0.4), 0 0 30px rgba(122, 0, 255, 0.2); }
+  50%       { box-shadow: 0 0 20px rgba(0, 240, 255, 0.8), 0 0 60px rgba(122, 0, 255, 0.5); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-20px); }
+}
+@keyframes dash-draw {
+  from { stroke-dashoffset: 24; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes node-appear {
+  0%   { opacity: 0; transform: scale(0.3); }
+  70%  { transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes ripple {
+  0%   { transform: scale(0); opacity: 0.6; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+.animate-float      { animation: float 6s ease-in-out infinite; }
+.animate-node-in    { animation: node-appear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-gradient   {
+  background-size: 200% 200%;
+  animation: gradient-shift 4s ease infinite;
+}
