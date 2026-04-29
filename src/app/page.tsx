@@ -1,8 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import ReactFlow, { Background, Controls } from "reactflow";
-import "reactflow/dist/style.css";
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  MiniMap,
+} from "@xyflow/react";
+
+import "@xyflow/react/dist/style.css";
 
 export default function ThoughtSpace() {
   const [input, setInput] = useState("");
@@ -16,7 +22,7 @@ export default function ThoughtSpace() {
     try {
       setLoading(true);
 
-      // clear previous graph
+      // Clear previous graph
       setNodes([]);
       setEdges([]);
 
@@ -27,44 +33,49 @@ export default function ThoughtSpace() {
 
       const data = await res.json();
 
-      // 🔥 generate unique nodes
+      // 🔥 Create nodes with unique IDs + better layout
       const uniqueNodes = data.nodes.map((node: any, i: number) => ({
         id: `${Date.now()}-${i}`,
         data: { label: node.label },
         position: {
-          x: Math.random() * 400,
-          y: Math.random() * 400,
+          x: 200 * (i % 3),
+          y: 150 * Math.floor(i / 3),
         },
         style: {
-          padding: 10,
-          borderRadius: "10px",
+          padding: "10px 15px",
+          borderRadius: "12px",
           color: "#fff",
+          fontWeight: "500",
+          border: "1px solid rgba(255,255,255,0.1)",
           background:
             node.type === "goal"
-              ? "#00ff88"
+              ? "linear-gradient(135deg, #00ff88, #00994d)"
               : node.type === "problem"
-              ? "#ff4d4d"
+              ? "linear-gradient(135deg, #ff4d4d, #990000)"
               : node.type === "solution"
-              ? "#4da6ff"
-              : "#999",
+              ? "linear-gradient(135deg, #4da6ff, #003366)"
+              : node.type === "opportunity"
+              ? "linear-gradient(135deg, #ffcc00, #996600)"
+              : "#333",
         },
       }));
 
-      // 🔥 simple edge mapping
+      // 🔥 Create edges correctly (connect sequentially)
       const uniqueEdges = data.edges.map((edge: any, i: number) => ({
         id: `${Date.now()}-e-${i}`,
-        source: uniqueNodes[i % uniqueNodes.length].id,
-        target: uniqueNodes[(i + 1) % uniqueNodes.length].id,
+        source: uniqueNodes[i % uniqueNodes.length]?.id,
+        target: uniqueNodes[(i + 1) % uniqueNodes.length]?.id,
         animated: true,
+        style: { stroke: "#7a00ff" },
       }));
 
-      // force re-render
+      // Force re-render
       setTimeout(() => {
         setNodes(uniqueNodes);
         setEdges(uniqueEdges);
       }, 100);
     } catch (err) {
-      console.error(err);
+      console.error("Frontend Error:", err);
     } finally {
       setLoading(false);
     }
@@ -80,10 +91,10 @@ export default function ThoughtSpace() {
         flexDirection: "column",
       }}
     >
-      {/* TOP BAR */}
+      {/* 🔝 TOP BAR */}
       <div
         style={{
-          padding: "10px",
+          padding: "12px",
           display: "flex",
           gap: "10px",
           borderBottom: "1px solid #222",
@@ -95,10 +106,12 @@ export default function ThoughtSpace() {
           placeholder="Type your thoughts..."
           style={{
             flex: 1,
-            padding: "10px",
-            borderRadius: "8px",
+            padding: "12px",
+            borderRadius: "10px",
             border: "none",
             outline: "none",
+            background: "#111",
+            color: "#fff",
           }}
         />
 
@@ -106,22 +119,24 @@ export default function ThoughtSpace() {
           onClick={handleAnalyze}
           style={{
             padding: "10px 20px",
-            background: "#7a00ff",
+            background: "linear-gradient(135deg, #7a00ff, #ff00c8)",
             border: "none",
-            borderRadius: "8px",
+            borderRadius: "10px",
             color: "white",
             cursor: "pointer",
+            fontWeight: "bold",
           }}
         >
           {loading ? "Analyzing..." : "Analyze"}
         </button>
       </div>
 
-      {/* GRAPH */}
+      {/* 🧠 GRAPH AREA */}
       <div style={{ flex: 1 }}>
         <ReactFlow nodes={nodes} edges={edges} fitView>
-          <Background />
+          <MiniMap />
           <Controls />
+          <Background gap={20} size={1} />
         </ReactFlow>
       </div>
     </div>
