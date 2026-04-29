@@ -1,9 +1,3 @@
-import { OpenRouter } from "@openrouter/sdk";
-
-const openrouter = new OpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY!
-});
-
 export async function POST(req: Request) {
   try {
     const { text } = await req.json();
@@ -12,30 +6,32 @@ export async function POST(req: Request) {
       return Response.json({ error: "No input" }, { status: 400 });
     }
 
-    const completion = await openrouter.chat.send({
-      model: "anthropic/claude-haiku-4.5", // 🔥 better than nemotron for structure
-      messages: [
-        {
-          role: "system",
-          content: `
-You are a high-level reasoning engine.
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "anthropic/claude-haiku-4.5",
+        temperature: 0.5,
+        messages: [
+          {
+            role: "system",
+            content: `
+You are an intelligent system that expands user thoughts.
 
-Convert user thoughts into a rich structured graph.
-
-STRICT RULES:
-- Generate 5–8 nodes
+RULES:
+- Generate 5 to 8 nodes
 - Include:
   goal, problem, cause, solution, opportunity
-- Think practically and deeply
-
-EXAMPLE:
-Input: "how to earn money"
-→ include freelancing, skills, jobs, problems, actions
+- Think deeply and practically
 
 OUTPUT (STRICT JSON ONLY):
+
 {
   "nodes": [
-    { "id": "1", "label": "", "type": "goal|problem|cause|solution|opportunity" }
+    { "id": "1", "label": "text", "type": "goal|problem|cause|solution|opportunity" }
   ],
   "edges": [
     { "source": "1", "target": "2", "relation": "causes|blocks|leads_to|enables" }
@@ -43,23 +39,22 @@ OUTPUT (STRICT JSON ONLY):
 }
 
 NO explanation
-NO markdown
 ONLY JSON
 `
-        },
-        {
-          role: "user",
-          content: text
-        }
-      ],
-      temperature: 0.5
+          },
+          {
+            role: "user",
+            content: text
+          }
+        ]
+      })
     });
 
-    const raw = completion.choices?.[0]?.message?.content;
+    const data = await response.json();
+    const raw = data?.choices?.[0]?.message?.content;
 
     if (!raw) throw new Error("Empty response");
 
-    // 🔥 CLEAN OUTPUT
     const cleaned = raw
       .replace(/```json/g, "")
       .replace(/```/g, "")
@@ -70,9 +65,8 @@ ONLY JSON
     return Response.json(parsed);
 
   } catch (error) {
-    console.error("API ERROR:", error);
+    console.error(error);
 
-    // ✅ fallback (never break UI)
     return Response.json({
       nodes: [
         { id: "1", label: "Earn Money", type: "goal" },
